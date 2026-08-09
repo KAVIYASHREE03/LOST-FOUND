@@ -1,0 +1,265 @@
+#include <iostream>
+#include <fstream>
+#include <vector>
+#include <string>
+using namespace std;
+
+class Item
+{
+public:
+    int id;
+    string name;
+    string category;
+    string location;
+    string date;
+    string person;
+    string contact;
+    string status;
+
+    void input(int itemId, string itemStatus)
+    {
+        id = itemId;
+        status = itemStatus;
+
+        cin.ignore();
+
+        cout << "Enter Item Name: ";
+        getline(cin, name);
+
+        cout << "Enter Category: ";
+        getline(cin, category);
+
+        cout << "Enter Location: ";
+        getline(cin, location);
+
+        cout << "Enter Date (DD-MM-YYYY): ";
+        getline(cin, date);
+
+        cout << "Enter Person Name: ";
+        getline(cin, person);
+
+        cout << "Enter Contact Number: ";
+        getline(cin, contact);
+    }
+
+    void display()
+    {
+        cout << "\n----------------------------------------";
+        cout << "\nItem ID       : " << id;
+        cout << "\nItem Name     : " << name;
+        cout << "\nCategory      : " << category;
+        cout << "\nLocation      : " << location;
+        cout << "\nDate          : " << date;
+        cout << "\nPerson Name   : " << person;
+        cout << "\nContact       : " << contact;
+        cout << "\nStatus        : " << status;
+        cout << "\n----------------------------------------\n";
+    }
+};
+
+vector<Item> items;
+
+void saveToFile()
+{
+    ofstream file("items.txt");
+
+    for (auto &item : items)
+    {
+        file << item.id << "|"
+             << item.name << "|"
+             << item.category << "|"
+             << item.location << "|"
+             << item.date << "|"
+             << item.person << "|"
+             << item.contact << "|"
+             << item.status << endl;
+    }
+
+    file.close();
+}
+
+void loadFromFile()
+{
+    ifstream file("items.txt");
+
+    if (!file)
+        return;
+
+    string line;
+
+    while (getline(file, line))
+    {
+        Item item;
+        size_t pos;
+        string data[8];
+        int index = 0;
+
+        while ((pos = line.find("|")) != string::npos)
+        {
+            data[index++] = line.substr(0, pos);
+            line.erase(0, pos + 1);
+        }
+
+        data[index] = line;
+
+        if (index == 7)
+        {
+            item.id = stoi(data[0]);
+            item.name = data[1];
+            item.category = data[2];
+            item.location = data[3];
+            item.date = data[4];
+            item.person = data[5];
+            item.contact = data[6];
+            item.status = data[7];
+
+            items.push_back(item);
+        }
+    }
+
+    file.close();
+}
+
+void addItem(string status)
+{
+    Item item;
+
+    int id = items.empty() ? 1 : items.back().id + 1;
+
+    item.input(id, status);
+
+    items.push_back(item);
+    saveToFile();
+
+    cout << "\nItem added successfully!";
+}
+
+void displayAll()
+{
+    if (items.empty())
+    {
+        cout << "\nNo records found.\n";
+        return;
+    }
+
+    for (auto &item : items)
+        item.display();
+}
+
+void searchItem()
+{
+    if (items.empty())
+    {
+        cout << "\nNo records available.\n";
+        return;
+    }
+
+    string keyword;
+
+    cin.ignore();
+
+    cout << "Enter item name or category to search: ";
+    getline(cin, keyword);
+
+    bool found = false;
+
+    for (auto &item : items)
+    {
+        if (item.name.find(keyword) != string::npos ||
+            item.category.find(keyword) != string::npos)
+        {
+            item.display();
+            found = true;
+        }
+    }
+
+    if (!found)
+        cout << "\nNo matching item found.\n";
+}
+
+void markAsReturned()
+{
+    int id;
+
+    cout << "Enter Item ID to mark as returned: ";
+    cin >> id;
+
+    bool found = false;
+
+    for (auto &item : items)
+    {
+        if (item.id == id)
+        {
+            item.status = "Returned";
+            found = true;
+
+            cout << "\nItem marked as returned successfully!";
+            break;
+        }
+    }
+
+    if (!found)
+        cout << "\nItem ID not found.";
+
+    saveToFile();
+}
+
+void menu()
+{
+    int choice;
+
+    do
+    {
+        cout << "\n\n========================================";
+        cout << "\n       LOST & FOUND MANAGEMENT SYSTEM";
+        cout << "\n========================================";
+        cout << "\n1. Add Lost Item";
+        cout << "\n2. Add Found Item";
+        cout << "\n3. Display All Items";
+        cout << "\n4. Search Item";
+        cout << "\n5. Mark Item as Returned";
+        cout << "\n6. Exit";
+        cout << "\n========================================";
+        cout << "\nEnter your choice: ";
+        cin >> choice;
+
+        switch (choice)
+        {
+        case 1:
+            addItem("Lost");
+            break;
+
+        case 2:
+            addItem("Found");
+            break;
+
+        case 3:
+            displayAll();
+            break;
+
+        case 4:
+            searchItem();
+            break;
+
+        case 5:
+            markAsReturned();
+            break;
+
+        case 6:
+            cout << "\nThank you for using the system!";
+            break;
+
+        default:
+            cout << "\nInvalid choice. Try again.";
+        }
+
+    } while (choice != 6);
+}
+
+int main()
+{
+    loadFromFile();
+    menu();
+
+    return 0;
+}
